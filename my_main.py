@@ -38,34 +38,6 @@ def reading_file(file_name: str = "") -> Union[str, bool]:
     return string
 
 
-def check_fields(string: str, lst_sub_strings: Union[str, list[str]],
-                 case_sensitivity: bool, method: str, count: int) -> bool:
-    """Проверка наличия значений у полей"""
-    empty_fields = []
-    if not string:
-        empty_fields.append("Строка для поиска")
-
-    if not lst_sub_strings:
-        empty_fields.append("Подстроки для поиска")
-
-    if case_sensitivity not in (True, False):
-        empty_fields.append("Чувствительность к регистру")
-
-    if not method:
-        empty_fields.append("Метод поиска")
-
-    if not count:
-        empty_fields.append("Количество вхождений")
-
-    if empty_fields:
-        print("У вас отсутствуют следующие поля:")
-        for field in empty_fields:
-            print(f"\t{field}")
-        return False
-
-    return True
-
-
 def colored_print_tuple(string: str, all_sub_strings: Union[str, list[str]],
                         result: Union[None, tuple, dict]) -> None:
     """Вывод для того случая, когда передана одна подстрока"""
@@ -241,11 +213,14 @@ def parse_args():
 
     method = args.method
 
-    count = args.count
+    count = len(string)
 
-    if count and count < 0:
-        print("Количество не может быть отрицательным числом.")
-        return None
+    if args.count:
+        if args.count > 0:
+            count = args.count
+        else:
+            print("Количество не может быть отрицательным числом.")
+            return None
 
     threshold = args.threshold
 

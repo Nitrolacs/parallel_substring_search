@@ -23,29 +23,34 @@ def timeit(method):
 
 
 def SearchString(text, pattern, k):
-    result = -1
-    m = len(pattern)
-    R = [0xFFFFFFFF for _ in range(k + 1)]
-    patternMask = {}
-    if pattern == "":
+    results = []  # создаем пустой список для результатов
+    if pattern == []:
         return 0
-    if m > 31:
-        return -1  # Error: The pattern is too long!
-    for i in range(m):
-        patternMask[pattern[i]] = patternMask.get(pattern[i], 0xFFFFFFFF) & ~(
-                1 << i)
-    for i in range(len(text)):
-        oldRd1 = R[0]
-        R[0] |= patternMask.get(text[i], 0xFFFFFFFF)
-        R[0] <<= 1
-        for d in range(1, k + 1):
-            tmp = R[d]
-            R[d] = (oldRd1 & (R[d] | patternMask.get(text[i], 0xFFFFFFFF))) << 1
-            oldRd1 = tmp
-        if R[k] & (1 << m) == 0:
-            result = i - m + 1
-            break
-    return result
+    for p in pattern:  # добавляем цикл по элементам списка pattern
+        m = len(p)  # изменяем m на длину текущей подстроки
+        R = [0xFFFFFFFF for _ in range(k + 1)]
+        patternMask = {}
+        if p == "":
+            return 0
+        if m > 31:
+            return -1  # Error: The pattern is too long!
+        for i in range(m):
+            patternMask[p[i]] = patternMask.get(p[i], 0xFFFFFFFF) & ~(
+                    1 << i)
+        for i in range(len(text)):
+            oldRd1 = R[0]
+            R[0] |= patternMask.get(text[i], 0xFFFFFFFF)
+            R[0] <<= 1
+            for d in range(1, k + 1):
+                tmp = R[d]
+                R[d] = (oldRd1 & (
+                            R[d] | patternMask.get(text[i], 0xFFFFFFFF))) << 1
+                oldRd1 = tmp
+            if R[k] & (1 << m) == 0:
+                results.append((i - m + 1,
+                                p))  # добавляем кортеж с индексом и подстрокой в список результатов
+                # убираем break
+    return results  # возвращаем список результатов
 
 
 @timeit
@@ -66,34 +71,41 @@ def search(string: str, sub_string: str or tuple, case_sensitivity: bool,
     else:
         sub_string_new = list(sub_string)
 
-    information = dict()
-    for word in sub_string_new:
-        information[word] = []
+    result = SearchString(string, sub_string_new, threshold)
 
-    for word in sub_string_new:
-        index = SearchString(string, word,
-                             threshold)  # Используем функцию SearchString
-        # для поиска первого вхождения слова с заданным порогом ошибок
-        if index != -1:
-            information[word].append(
-                index)  # Добавляем индекс в список для данного слова
+    if isinstance(sub_string, tuple):
+        counter = 0
 
-    if method == "last":  # Если нужно найти последнее вхождение
-        for word in sub_string_new:
-            index = SearchString(string[::-1], word[::-1],
-                                 threshold)  # Ищем первое вхождение обратной
-            # строки с заданным порогом ошибок
-            if index != -1:
-                information[word].append(len(string) - index - len(
-                    word))  # Добавляем индекс последнего вхождения для
-                # данного слова
+        if method == "last":
+            result = result[::-1]
 
-    for key, item in information.items():
-        if item:
-            information[key] = tuple(item[
-                                     :count])  # Оставляем только count первых или последних индексов для каждого слова
-        else:
-            information[key] = None
+        information = dict()
+        for word in sub_string:
+            information[word] = []
+
+        for pair in result:
+            counter += 1
+            if counter <= count:
+                information[pair[1]].append(pair[0])
+
+        for key, item in information.items():
+            if item:
+                information[key] = tuple(item)
+            else:
+                information[key] = None
+    else:
+        information = []
+
+        for item in result:
+            information.append(item[0])
+
+        if method == "last":
+            information = list(information[::-1])[:count]
+        elif method == "first":
+            information = list(information[:count])
+
+        if information:
+            information = tuple(information)
 
     if len(information) == 0:
         information = None
