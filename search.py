@@ -22,9 +22,11 @@ def timeit(method):
     return timed
 
 
-def SearchString(text, pattern, k):
+def bitap_search(text, pattern, k):
+    text = " " + text  # Чтобы учитывались символы в начале
+
     results = []  # создаем пустой список для результатов
-    if pattern == []:
+    if not pattern:
         return 0
     for p in pattern:  # добавляем цикл по элементам списка pattern
         m = len(p)  # изменяем m на длину текущей подстроки
@@ -47,8 +49,9 @@ def SearchString(text, pattern, k):
                             R[d] | patternMask.get(text[i], 0xFFFFFFFF))) << 1
                 oldRd1 = tmp
             if R[k] & (1 << m) == 0:
-                results.append((i - m + 1,
-                                p))  # добавляем кортеж с индексом и подстрокой в список результатов
+                results.append((i - m,
+                                p))  # добавляем кортеж с индексом и
+                # подстрокой в список результатов
                 # убираем break
     return results  # возвращаем список результатов
 
@@ -71,7 +74,7 @@ def search(string: str, sub_string: str or tuple, case_sensitivity: bool,
     else:
         sub_string_new = list(sub_string)
 
-    result = SearchString(string, sub_string_new, threshold)
+    result = bitap_search(string, sub_string_new, threshold)
 
     if isinstance(sub_string, tuple):
         counter = 0

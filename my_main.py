@@ -39,7 +39,7 @@ def reading_file(file_name: str = "") -> Union[str, bool]:
 
 
 def colored_print_tuple(string: str, all_sub_strings: Union[str, list[str]],
-                        result: Union[None, tuple, dict]) -> None:
+                        result: Union[None, tuple, dict], rfile) -> None:
     """Вывод для того случая, когда передана одна подстрока"""
 
     output_string = ""
@@ -71,8 +71,14 @@ def colored_print_tuple(string: str, all_sub_strings: Union[str, list[str]],
     print("Набор индексов начала каждой подстроки:")
     print(f"\033[{color}m{result}\033[0m")
 
+    if rfile:
+        rfile.write("Строка:\n" + str(string) + "\n")
+        rfile.write("Подстрока:\n" + str(all_sub_strings) + "\n")
+        rfile.write("Индексы найденной подстроки:\n" + str(result))
+        rfile.close()
 
-def colored_print_dict(string: str, result: Union[None, dict]) -> None:
+
+def colored_print_dict(string: str, result: Union[None, dict], rfile) -> None:
     """Печать нескольких подстрок"""
     count_row = 0  # Количество строк, которое выводится
 
@@ -119,19 +125,24 @@ def colored_print_dict(string: str, result: Union[None, dict]) -> None:
             print("Набор индексов начала каждой подстроки:")
             print(f"\033[{color}m{key}: {result[key]}\033[0m")
 
+    if rfile:
+        rfile.write("Строка:\n" + str(string) + "\n")
+        rfile.write("Найденные подстроки:\n" + str(result)[1:-1])
+        rfile.close()
+
 
 def colored_output(string: str, all_sub_strings: Union[str, list[str]],
-                   result: Union[None, tuple, dict]) -> None:
+                   result: Union[None, tuple, dict], rfile) -> None:
     """Красивый вывод строк"""
     if isinstance(result, tuple):
-        colored_print_tuple(string, all_sub_strings, result)
+        colored_print_tuple(string, all_sub_strings, result, rfile)
     else:
-        colored_print_dict(string, result)
+        colored_print_dict(string, result, rfile)
 
 
 def search_substring_in_string(string: str, sub_strings: Union[str, list[str]],
                                case_sensitivity: bool, method: str,
-                               count: int, threshold: int, process: int) -> None:
+                               count: int, threshold: int, process: int, rfile) -> None:
     """Вызов функции поиска из модуля"""
 
     if len(sub_strings) == 1:
@@ -145,7 +156,7 @@ def search_substring_in_string(string: str, sub_strings: Union[str, list[str]],
     if not result:
         print("Подстроки не найдены.")
 
-    colored_output(string, all_sub_strings, result)
+    colored_output(string, all_sub_strings, result, rfile)
 
 
 def parse_args():
@@ -163,7 +174,7 @@ def parse_args():
     group.add_argument("-s", "--string", type=str, dest="string",
                        help="Исходная строка")
 
-    parser.add_argument("-rf", "--result-file", type=str, default=None,
+    parser.add_argument("-rf", "--result_file", type=str, default=None,
                         dest="result_file", help="Файл для записи результата")
 
     parser.add_argument("-ss", "--sub_string", nargs="+", type=str,
@@ -207,6 +218,16 @@ def parse_args():
         if not string:
             return False
 
+    result_file = args.result_file
+    rfile = None
+
+    if result_file:
+        try:
+            rfile = open(result_file, "w", encoding="utf-8")
+        except PermissionError:
+            print("Не получается открыть файл для записи результата.")
+            return False
+
     sub_strings = args.sub_string
 
     case_sensitivity = args.case_sensitivity
@@ -233,20 +254,8 @@ def parse_args():
     if process and process < 0:
         print("Количество процессов не может быть отрицательным числом.")
 
-    """
-    result_file = args.result_file
-
-
-    if result_file:
-        try:
-            rfile = open(result_file, "w", encoding="utf-8")
-        except PermissionError:
-            print("Ошибка при открытии файла для записи результата")
-            return None
-    """
-
     search_substring_in_string(string, sub_strings, case_sensitivity, method,
-                               count, threshold, process)
+                               count, threshold, process, rfile)
 
 
 def main() -> None:
