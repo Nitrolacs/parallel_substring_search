@@ -1,6 +1,7 @@
 import logging
 import time
 import multiprocessing  # импортируем модуль multiprocessing
+import sys
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -35,8 +36,9 @@ def bitap_search(text, pattern, k):
         patternMask = {}
         if p == "":
             return 0
-        if m > 31:
-            return -1  # Error: The pattern is too long!
+        if m > 31 or m > len(text):
+            print("Превышен размер подстроки. Завершение программы...")
+            sys.exit(0)  # Error: The pattern is too long!
         for i in range(m):
             patternMask[p[i]] = patternMask.get(p[i], 0xFFFFFFFF) & ~(
                     1 << i)
