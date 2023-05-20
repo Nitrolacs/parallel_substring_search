@@ -249,10 +249,14 @@ def parse_args():
         print("Количество ошибок не может быть отрицательным числом.")
         return None
 
-    process = args.process
+    process = None
 
-    if process and process < 0:
-        print("Количество процессов не может быть отрицательным числом.")
+    if args.process:
+        if args.process > 0:
+            process = args.process
+        else:
+            print("Количество процессов не может быть отрицательным числом.")
+            return None
 
     search_substring_in_string(string, sub_strings, case_sensitivity, method,
                                count, threshold, process, rfile)

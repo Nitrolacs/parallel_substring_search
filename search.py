@@ -1,5 +1,6 @@
 import logging
 import time
+import multiprocessing  # импортируем модуль multiprocessing
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -46,14 +47,28 @@ def bitap_search(text, pattern, k):
             for d in range(1, k + 1):
                 tmp = R[d]
                 R[d] = (oldRd1 & (
-                            R[d] | patternMask.get(text[i], 0xFFFFFFFF))) << 1
+                        R[d] | patternMask.get(text[i], 0xFFFFFFFF))) << 1
                 oldRd1 = tmp
             if R[k] & (1 << m) == 0:
                 results.append((i - m,
-                                p))  # добавляем кортеж с индексом и
-                # подстрокой в список результатов
+                                p))  # добавляем кортеж с индексом и подстрокой в список результатов
                 # убираем break
     return results  # возвращаем список результатов
+
+
+def worker(text_part, pattern, k):  # добавляем параметр k в функцию worker
+    return bitap_search(text_part, pattern,
+                        k)  # передаем k в функцию bitap_search
+
+
+def merge(results):  # функция merge не меняется
+    merged_results = []
+    offset = 0
+    for result in results:
+        for pair in result:
+            merged_results.append((pair[0] + offset, pair[1]))
+        offset += len(result)
+    return merged_results
 
 
 @timeit
@@ -74,7 +89,27 @@ def search(string: str, sub_string: str or tuple, case_sensitivity: bool,
     else:
         sub_string_new = list(sub_string)
 
-    result = bitap_search(string, sub_string_new, threshold)
+    if process:
+        pool = multiprocessing.Pool(
+            processes=process)  # создаем пул процессов с заданным количеством
+        # process
+        text_parts = [string[i:i + len(string) // process] for i in
+                      range(0, len(string),
+                            len(string) // process)]  # разбиваем текст на равные
+        # части по длине
+
+        # Умножаем на process, чтобы создать список из process
+        # одинаковых элементов.
+        # Это нужно для того, чтобы функция zip смогла сопоставить каждой части
+        # текста один и тот же список подстрок.
+        results = pool.starmap(worker, zip(text_parts, [sub_string_new] * process, [
+            threshold] * process))  # передаем threshold в качестве параметра k
+        # для каждого процесса
+        result = merge(
+            results)  # используем функцию merge для объединения списка
+        # результатов в один
+    else:
+        result = bitap_search(string, sub_string_new, threshold)
 
     if isinstance(sub_string, tuple):
         counter = 0
