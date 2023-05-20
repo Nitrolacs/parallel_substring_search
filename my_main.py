@@ -1,13 +1,12 @@
 import os
 import argparse
 
+import search
 import random
 import textwrap
 
 from colorama import init
 from typing import Union
-
-from search import search
 
 
 def reading_file(file_name: str = "") -> Union[str, bool]:
@@ -158,6 +157,25 @@ def colored_output(string: str, all_sub_strings: Union[str, list[str]],
         colored_print_dict(string, result)
 
 
+def search_substring_in_string(string: str, sub_strings: Union[str, list[str]],
+                               case_sensitivity: bool, method: str,
+                               count: int, threshold: int, process: int) -> None:
+    """Вызов функции поиска из модуля"""
+
+    if len(sub_strings) == 1:
+        all_sub_strings = sub_strings[0]
+    else:
+        all_sub_strings = tuple(sub_strings)
+
+    result = search.search(string, all_sub_strings, case_sensitivity, method,
+                           count, threshold, process)
+
+    if not result:
+        print("Подстроки не найдены.")
+
+    colored_output(string, all_sub_strings, result)
+
+
 def parse_args():
     """Обработка параметров командной строки"""
 
@@ -240,7 +258,9 @@ def parse_args():
     if process and process < 0:
         print("Количество процессов не может быть отрицательным числом.")
 
+    """
     result_file = args.result_file
+
 
     if result_file:
         try:
@@ -248,136 +268,10 @@ def parse_args():
         except PermissionError:
             print("Ошибка при открытии файла для записи результата")
             return None
+    """
 
-    results = tuple()
-
-    for strings in string:
-        results += (search(string, sub_strings,
-                           case_sensitivity, method,
-                           count, threshold, process))
-
-    for i, result in enumerate(results):
-        print_colored(strings[i], result)
-        if result_file:
-            rfile.write(str(result) + "\n")
-
-    if result_file:
-        rfile.close()
-
-
-def parameters_output(string: str, sub_strings: Union[str, list[str]],
-                      case_sensitivity: bool, method: str, count: int) -> None:
-    """Печать настроек поиска"""
-    print(f"Строка: {string};")
-    print("Подстроки:")
-    for sub_string in enumerate(sub_strings):
-        print(f"{sub_string[1]}")
-    print(f"Чувствительность к регистру: {case_sensitivity};")
-    print(
-        f"Количество вхождений подстроки в строку, которое нужно найти: {count};")
-    print(f"Метод поиска: {method};")
-
-
-def get_string_menu() -> None:
-    """Вывод меню для выбора ввода строки"""
-    print("1 - Ввести строку вручную;")
-    print("2 - Считать строку из файла.")
-
-
-def get_string() -> str:
-    """Получение строки"""
-    string = ""
-
-    get_string_menu()
-
-    choice = input("Введите желаемый номер команды: ")
-
-    while not string:
-        if choice == "1":
-            string = input(
-                "Введите строку, в которой будет производиться поиск подстрок: ")
-            is_valid = False
-            while not is_valid:
-                if not string.strip(" "):
-                    print("Введите нормальную строку.")
-                    string = input(
-                        "Введите строку, в которой будет производиться поиск подстрок: ")
-                else:
-                    is_valid = True
-
-        elif choice == "2":
-            result = reading_file(string)
-
-            if result:
-                string = result
-
-        else:
-            print("Такого пункта нет")
-            choice = input("Введите желаемый номер команды: ")
-
-    return string
-
-
-def get_sub_string() -> Union[str, list[str]]:
-    """Получение подстроки"""
-
-    sub_strings = []
-    sub_string_entered = input(
-        "Введите строки, которые нужно искать в строке (нажмите Enter для остановки): ")
-    while sub_string_entered != "" or not sub_strings:
-        if sub_string_entered != "":
-            if sub_string_entered and sub_string_entered != " " * len(
-                    sub_string_entered):
-                sub_strings.append(sub_string_entered.strip(" "))
-            else:
-                print("Недопустимый ввод. Попробуйте снова.")
-
-        sub_string_entered = input(
-            "Введите строки, которые нужно искать в строке (нажмите Enter для остановки): ")
-
-    return sub_strings
-
-
-def get_case_sensitivity() -> bool:
-    """Получение параметра чувствительности к регистру"""
-
-    choice = input(
-        "Поиск должен быть чувствителен к регистру (True) или нет (False): ")
-    while choice not in ["True", "False"]:
-        print("Введено неверное значение. Попробуйте снова.")
-        choice = input(
-            "Поиск должен быть чувствителен к регистру (True) или нет (False): ")
-
-    if choice == "True":
-        case_sensitivity = True
-    else:
-        case_sensitivity = False
-
-    return case_sensitivity
-
-
-def get_count() -> int:
-    """Получение параметра количества совпадений, которые нужно найти"""
-    choice = input("Введите количество совпадений, которые нужно найти: ")
-    while not choice.isnumeric() or int(choice) <= 0:
-        print("Введено неверное значение. Попробуйте снова.")
-        choice = input("Введите количество совпадений, которые нужно найти: ")
-
-    count = int(choice)
-    return count
-
-
-def get_method() -> str:
-    """Получение параметра метода поиска"""
-    choice = input("Поиск должен быть с начала (first) или с конца (last): ")
-
-    while choice not in ["first", "last"]:
-        print("Введено неверное значение. Попробуйте снова.")
-        choice = input(
-            "Поиск должен быть с начала (first) или с конца (last): ")
-
-    method = choice
-    return method
+    search_substring_in_string(string, sub_strings, case_sensitivity, method,
+                               count, threshold, process)
 
 
 def main() -> None:
