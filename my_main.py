@@ -4,13 +4,14 @@
 
 import os
 import argparse
-
-import search
-import random
 import textwrap
+import random
+
+from typing import Union, TextIO
 
 from colorama import init
-from typing import Union, TextIO
+
+import search
 
 
 def reading_file(file_name: str = "") -> Union[str, bool]:
@@ -103,53 +104,53 @@ def colored_print_dict(string: str, result: Union[None, dict],
     :return: None
     """
 
-    if not result:
-        return None
+    if result:
+        for key in result:  # Получаем ключи словаря
 
-    for key in result:  # Получаем ключи словаря
+            output_string = ""
+            color = random.randint(31,
+                                   36)  # Берём все цвета, кроме
+                                        # чёрного и белого
+            coloring_indexes = []  # Индексы символов, которые
+                                   # мы будем раскрашивать
 
-        output_string = ""
-        color = random.randint(31,
-                               36)  # Берём все цвета, кроме чёрного и белого
-        coloring_indexes = []  # Индексы символов, которые мы будем раскрашивать
+            if result[key]:  # Если подстрока найдена
 
-        if result[key]:  # Если подстрока найдена
+                # Получаем индексы символов, которые мы будем раскрашивать
+                for i in result[key]:
+                    for j in range(i, i + len(key)):
+                        coloring_indexes.append(j)
 
-            # Получаем индексы символов, которые мы будем раскрашивать
-            for i in result[key]:
-                for j in range(i, i + len(key)):
-                    coloring_indexes.append(j)
+                # Получаем пару (индекс, символ)
+                for letter in enumerate(string):
+                    if letter[0] in coloring_indexes:
+                        letter = list(letter)
 
-            # Получаем пару (индекс, символ)
-            for letter in enumerate(string):
-                if letter[0] in coloring_indexes:
-                    letter = list(letter)
+                        output_string += f"\033[{color}m {letter[1]}\033[0m".\
+                            replace(' ', '')
+                        continue
 
-                    output_string += f"\033[{color}m {letter[1]}\033[0m".\
-                        replace(' ', '')
-                    continue
+                    output_string += letter[1]
 
-                output_string += letter[1]
+                print("Найденные подстроки:")
 
-            print("Найденные подстроки:")
+                for line in textwrap.wrap(output_string, width=120)[:10]:
+                    print(line)
 
-            for line in textwrap.wrap(output_string, width=120)[:10]:
-                print(line)
+                print("Набор индексов начала каждой подстроки:")
+                print(f"\033[{color}m{key}: {result[key]}\033[0m")
 
-            print("Набор индексов начала каждой подстроки:")
-            print(f"\033[{color}m{key}: {result[key]}\033[0m")
+            else:
+                print("Найденные подстроки:")
+                for line in textwrap.wrap(string, width=120)[:10]:
+                    print(line)
+                print("Набор индексов начала каждой подстроки:")
+                print(f"\033[{color}m{key}: {result[key]}\033[0m")
 
-        else:
-            print("Найденные подстроки:")
-            for line in textwrap.wrap(string, width=120)[:10]:
-                print(line)
-            print("Набор индексов начала каждой подстроки:")
-            print(f"\033[{color}m{key}: {result[key]}\033[0m")
-
-    if rfile:
-        rfile.write("Строка:\n" + str(string) + "\n")
-        rfile.write("Найденные подстроки:\n" + str(result)[1:-1])
-        rfile.close()
+        if rfile:
+            rfile.write("Строка:\n" + str(string) + "\n")
+            rfile.write("Найденные подстроки:\n" + str(result)[1:-1])
+            rfile.close()
 
 
 def colored_output(string: str, all_sub_strings: Union[str, list[str]],
@@ -208,8 +209,8 @@ def parse_args() -> None:
     # Осуществляем разбор аргументов командной строки
     parser = argparse.ArgumentParser(description="Получение параметров для "
                                                  "нечеткого "
-                                                 "поиска подстроки в введённой "
-                                                 "строке")
+                                                 "поиска подстроки в введённой"
+                                                 " строке")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-f", "--file", type=str, dest="file",
@@ -225,7 +226,7 @@ def parse_args() -> None:
                         help="Одна или несколько подстрок, которые необходимо "
                              "найти")
     parser.add_argument("-cs", "--case_sensitivity", dest="case_sensitivity",
-                        help="Чувствительность к регистру", action="store_true")
+                     help="Чувствительность к регистру", action="store_true")
     parser.add_argument("-m", "--method", choices=("first", "last"),
                         dest="method",
                         help="Метод поиска", default="first")
@@ -303,6 +304,8 @@ def parse_args() -> None:
 
     search_substring_in_string(string, sub_strings, case_sensitivity, method,
                                count, threshold, process, rfile)
+
+    return None
 
 
 def main() -> None:

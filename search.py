@@ -6,7 +6,7 @@ import logging
 import time
 import multiprocessing  # импортируем модуль multiprocessing
 
-from typing import List, Tuple, Dict, Any, Callable
+from typing import List, Tuple, Dict, Callable
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -22,19 +22,19 @@ def timeit(method: Callable) -> Callable:
     """
 
     def timed(*args):
-        ts = time.perf_counter()
+        time_start = time.perf_counter()
         result = method(*args)
-        te = time.perf_counter()
-        running_time = f"{te - ts:0.4f}"
+        time_end = time.perf_counter()
+        running_time = f"{time_end - time_start:0.4f}"
 
-        logging.debug('%r %r %r sec' % (method.__name__, args, running_time))
+        logging.debug(f'{method.__name__!r} {args!r} {running_time!r} sec')
         return result
 
     return timed
 
 
-def bitap_search_multiple(haystack: str, needle: List[str], threshold: int) -> \
-        List[Tuple[int, str]]:
+def bitap_search_multiple(haystack: str, needle: List[str],
+                          threshold: int) -> List[Tuple[int, str]]:
     """
     Функция для поиска нескольких подстрок в строке с
     допустимым количеством ошибок.
@@ -71,12 +71,12 @@ def bitap_search(haystack: str, needle: str, threshold: int) -> List[int]:
     :return: список индексов, где начинаются вхождения подстроки в строку
     """
     # Длина строки и подстроки
-    haystackLen = len(haystack)
-    needleLen = len(needle)
+    haystack_len = len(haystack)
+    needle_len = len(needle)
     # Результат - список индексов вхождений
     result = []
 
-    def _generateAlphabet(needle, haystack):
+    def _generate_alphabet(needle, haystack):
         """
         Вспомогательная функция для генерации алфавита
         Алфавит - это словарь, где ключи - буквы строки,
@@ -88,18 +88,18 @@ def bitap_search(haystack: str, needle: str, threshold: int) -> List[int]:
         alphabet = {}
         for letter in haystack:
             if letter not in alphabet:
-                letterPositionInNeedle = 0
+                letter_position_in_needle = 0
                 for symbol in needle:
                     # Сдвигаем маску на один бит влево
-                    letterPositionInNeedle = letterPositionInNeedle << 1
+                    letter_position_in_needle = letter_position_in_needle << 1
                     # Устанавливаем младший бит в 1, если буква не
                     # совпадает с символом
-                    letterPositionInNeedle |= int(letter != symbol)
-                alphabet[letter] = letterPositionInNeedle
+                    letter_position_in_needle |= int(letter != symbol)
+                alphabet[letter] = letter_position_in_needle
         return alphabet
 
     # Генерируем алфавит по строке и подстроке
-    alphabet = _generateAlphabet(needle, haystack)
+    alphabet = _generate_alphabet(needle, haystack)
 
     # Создаем таблицу Битапа - двумерный список битовых масок
     # Первый индекс - по k (количеству ошибок, нумерация начинается с 1),
@@ -107,29 +107,33 @@ def bitap_search(haystack: str, needle: str, threshold: int) -> List[int]:
     table = []
 
     # Пустая маска - все биты установлены в 1
-    emptyColumn = (2 << (needleLen - 1)) - 1
+    empty_column = (2 << (needle_len - 1)) - 1
 
     # Генерируем нижний уровень таблицы - для k = 0
     underground = []
-    [underground.append(emptyColumn) for i in range(haystackLen + 1)]
+
+    for _ in range(haystack_len + 1):
+        underground.append(empty_column)
+
     table.append(underground)
 
     # Выполняем точное совпадение - для k = 1
     k = 1
-    table.append([emptyColumn])
-    for columnNum in range(1, haystackLen + 1):
+    table.append([empty_column])
+    for column_num in range(1, haystack_len + 1):
         # Сдвигаем предыдущую маску на один бит вправо
-        prevColumn = (table[k][columnNum - 1]) >> 1
+        prev_column = (table[k][column_num - 1]) >> 1
         # Получаем маску для текущей буквы строки по алфавиту
-        letterPattern = alphabet[haystack[columnNum - 1]]
+        letter_pattern = alphabet[haystack[column_num - 1]]
         # Объединяем маски побитовым ИЛИ
-        curColumn = prevColumn | letterPattern
-        table[k].append(curColumn)
+        cur_column = prev_column | letter_pattern
+        table[k].append(cur_column)
         # Проверяем младший бит текущей маски - если он равен 0,
-        # значит есть точное совпадение подстроки и подпоследовательности строки
-        if (curColumn & 0x1) == 0:
+        # значит есть точное совпадение подстроки и
+        # подпоследовательности строки
+        if (cur_column & 0x1) == 0:
             # Вычисляем индекс начала вхождения подстроки в строку
-            index = columnNum - needleLen
+            index = column_num - needle_len
             # Добавляем индекс в результат, если его там еще нет
             if index not in result:
                 result.append(index)
@@ -137,32 +141,32 @@ def bitap_search(haystack: str, needle: str, threshold: int) -> List[int]:
     # Выполняем нечеткое сравнение с расчетом расстояния Левенштейна - для
     # k от 2 до threshold + 1
     for k in range(2, threshold + 2):
-        table.append([emptyColumn])
-        for columnNum in range(1, haystackLen + 1):
+        table.append([empty_column])
+        for column_num in range(1, haystack_len + 1):
             # Сдвигаем предыдущую маску на один бит вправо
-            prevColumn = (table[k][columnNum - 1]) >> 1
+            prev_column = (table[k][column_num - 1]) >> 1
             # Получаем маску для текущей буквы строки по алфави
-            letterPattern = alphabet[haystack[columnNum - 1]]
+            letter_pattern = alphabet[haystack[column_num - 1]]
             # Объединяем маски побитовым ИЛИ
-            curColumn = prevColumn | letterPattern
+            cur_column = prev_column | letter_pattern
             # Вычисляем маски для операций вставки, удаления и замены символов
-            insertColumn = curColumn & (table[k - 1][columnNum - 1])
-            deleteColumn = curColumn & (table[k - 1][columnNum] >> 1)
-            replaceColumn = curColumn & (table[k - 1][columnNum - 1] >> 1)
+            insert_column = cur_column & (table[k - 1][column_num - 1])
+            delete_column = cur_column & (table[k - 1][column_num] >> 1)
+            replace_column = cur_column & (table[k - 1][column_num - 1] >> 1)
             # Объединяем маски для операций побитовым И и получаем
             # итоговую маску для текущего k и столбца
-            resColumn = insertColumn & deleteColumn & replaceColumn
-            table[k].append(resColumn)
+            res_column = insert_column & delete_column & replace_column
+            table[k].append(res_column)
             # Проверяем младший бит итоговой маски - если он равен 0,
             # значит есть нечеткое совпадение подстроки и подпоследовательности
             # строки с k ошибками или меньше
-            if (resColumn & 0x1) == 0:
+            if (res_column & 0x1) == 0:
                 # Вычисляем индекс начала вхождения подстроки в строку с учетом
                 # операции замены символа
-                startPos = max(0, columnNum - needleLen - 1)
+                start_pos = max(0, column_num - needle_len - 1)
                 # Добавляем индекс в результат, если его там еще нет
-                if startPos not in result:
-                    result.append(startPos)
+                if start_pos not in result:
+                    result.append(start_pos)
     return result
 
 
@@ -223,7 +227,7 @@ def search(string: str, sub_string: str or tuple, case_sensitivity: bool,
         string = string.lower()
 
         if isinstance(sub_string, tuple):
-            sub_string = tuple([word.lower() for word in sub_string])
+            sub_string = tuple(word.lower() for word in sub_string)
         else:
             sub_string = sub_string.lower()
 
@@ -238,14 +242,16 @@ def search(string: str, sub_string: str or tuple, case_sensitivity: bool,
         # process
         text_parts = [string[i:i + len(string) // process] for i in
                       range(0, len(string),
-                            len(string) // process)]  # разбиваем текст на равные
-        # части по длине
+                            len(string) // process)]  # разбиваем текст
+                                                      # на равные
+                                                      # части по длине
 
         # Умножаем на process, чтобы создать список из process
         # одинаковых элементов.
         # Это нужно для того, чтобы функция zip смогла сопоставить каждой части
         # текста один и тот же список подстрок.
-        results = pool.starmap(worker, zip(text_parts, [sub_string_new] * process, [
+        results = pool.starmap(worker, zip(text_parts, [sub_string_new]
+                                           * process, [
             threshold] * process))  # передаем threshold в качестве параметра k
         # для каждого процесса
         result = merge(
@@ -262,7 +268,7 @@ def search(string: str, sub_string: str or tuple, case_sensitivity: bool,
         if method == "last":
             result = result[::-1]
 
-        information = dict()
+        information = {}
         for word in sub_string:
             information[word] = []
 
