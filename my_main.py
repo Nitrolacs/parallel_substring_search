@@ -1,3 +1,7 @@
+"""
+Главный файл модуля
+"""
+
 import os
 import argparse
 
@@ -6,11 +10,15 @@ import random
 import textwrap
 
 from colorama import init
-from typing import Union
+from typing import Union, TextIO
 
 
 def reading_file(file_name: str = "") -> Union[str, bool]:
-    """Чтение строки из файла"""
+    """
+    Чтение строки из файла
+    :param file_name: название файла
+    :return: считанная информация
+    """
     file_strings = ""
     string = ""
     if not file_name:
@@ -40,7 +48,14 @@ def reading_file(file_name: str = "") -> Union[str, bool]:
 
 def colored_print_tuple(string: str, all_sub_strings: Union[str, list[str]],
                         result: Union[None, tuple, dict], rfile) -> None:
-    """Вывод для того случая, когда передана одна подстрока"""
+    """
+    Вывод для того случая, когда передана одна подстрока
+    :param string: Строка
+    :param all_sub_strings: Подстроки
+    :param result: Результат в виде индексов вхождений подстрок
+    :param rfile: Результирующий файл
+    :return: None
+    """
 
     output_string = ""
     color = random.randint(31, 36)  # Берём все цвета, кроме чёрного и белого
@@ -78,9 +93,15 @@ def colored_print_tuple(string: str, all_sub_strings: Union[str, list[str]],
         rfile.close()
 
 
-def colored_print_dict(string: str, result: Union[None, dict], rfile) -> None:
-    """Печать нескольких подстрок"""
-    count_row = 0  # Количество строк, которое выводится
+def colored_print_dict(string: str, result: Union[None, dict],
+                       rfile: TextIO) -> None:
+    """
+    Печать нескольких подстрок
+    :param string: Исходная строка
+    :param result: Результат
+    :param rfile: Результирующий файл
+    :return: None
+    """
 
     if not result:
         return None
@@ -104,8 +125,8 @@ def colored_print_dict(string: str, result: Union[None, dict], rfile) -> None:
                 if letter[0] in coloring_indexes:
                     letter = list(letter)
 
-                    output_string += f"\033[{color}m {letter[1]}\033[0m".replace(
-                        ' ', '')
+                    output_string += f"\033[{color}m {letter[1]}\033[0m".\
+                        replace(' ', '')
                     continue
 
                 output_string += letter[1]
@@ -132,8 +153,15 @@ def colored_print_dict(string: str, result: Union[None, dict], rfile) -> None:
 
 
 def colored_output(string: str, all_sub_strings: Union[str, list[str]],
-                   result: Union[None, tuple, dict], rfile) -> None:
-    """Красивый вывод строк"""
+                   result: Union[None, tuple, dict], rfile: TextIO) -> None:
+    """
+    Красивый вывод строк
+    :param string: строка
+    :param all_sub_strings: подстроки
+    :param result: результат
+    :param rfile: результирующий файл
+    :return: None
+    """
     if isinstance(result, tuple):
         colored_print_tuple(string, all_sub_strings, result, rfile)
     else:
@@ -142,8 +170,20 @@ def colored_output(string: str, all_sub_strings: Union[str, list[str]],
 
 def search_substring_in_string(string: str, sub_strings: Union[str, list[str]],
                                case_sensitivity: bool, method: str,
-                               count: int, threshold: int, process: int, rfile) -> None:
-    """Вызов функции поиска из модуля"""
+                               count: int, threshold: int, process: int,
+                               rfile: TextIO) -> None:
+    """
+    Вызов функции поиска из модуля
+    :param string: Исходная строка
+    :param sub_strings: Подстроки
+    :param case_sensitivity: Чувствительность к регистру букв
+    :param method: Метод поиска
+    :param count: Количество вхождений
+    :param threshold: Количество ошибок
+    :param process: Количество процессов
+    :param rfile: Результирующий файл
+    :return: None
+    """
 
     if len(sub_strings) == 1:
         all_sub_strings = sub_strings[0]
@@ -159,8 +199,11 @@ def search_substring_in_string(string: str, sub_strings: Union[str, list[str]],
     colored_output(string, all_sub_strings, result, rfile)
 
 
-def parse_args():
-    """Обработка параметров командной строки"""
+def parse_args() -> None:
+    """
+    Обработка параметров командной строки
+    :return: None
+    """
 
     # Осуществляем разбор аргументов командной строки
     parser = argparse.ArgumentParser(description="Получение параметров для "
@@ -190,7 +233,7 @@ def parse_args():
                         help="Количество совпадений, которое нужно найти",
                         default=None)
     parser.add_argument("-t", "--threshold", type=int, dest="threshold",
-                        default=1,
+                        default=0,
                         help="Максимальное количество ошибок")
     parser.add_argument("-p", "--process", type=int, dest="process",
                         default=None,
@@ -202,11 +245,11 @@ def parse_args():
     if not (args.string or args.file):
         # Если не была передана строка или путь к файлу
         print("Укажите строку или путь к файлу.")
-        return False
+        return None
 
     if not args.sub_string:
         print("Укажите подстроки, которые необходимо искать.")
-        return False
+        return None
 
     string = ""
 
@@ -216,7 +259,7 @@ def parse_args():
     elif args.file:
         string = reading_file(args.file)
         if not string:
-            return False
+            return None
 
     result_file = args.result_file
     rfile = None
@@ -226,7 +269,7 @@ def parse_args():
             rfile = open(result_file, "w", encoding="utf-8")
         except PermissionError:
             print("Не получается открыть файл для записи результата.")
-            return False
+            return None
 
     sub_strings = args.sub_string
 

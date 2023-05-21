@@ -2,14 +2,15 @@ def bitapSearchMultiple(haystack, needle, maxErrors):
     result = []
 
     for p in needle:
-        tmp_result = bitapSearch(haystack, p, maxErrors)
+        tmp_result = bitap_search(haystack, p, maxErrors)
+        tmp_result.sort()
         for index in tmp_result:
             result.append((index, p))
 
     return result
 
 
-def bitapSearch(haystack, needle, maxErrors):
+def bitap_search(haystack, needle, maxErrors):
     haystackLen = len(haystack)
     needleLen = len(needle)
     result = []
@@ -45,7 +46,6 @@ def bitapSearch(haystack, needle, maxErrors):
             index = columnNum - needleLen
             if index not in result:
                 result.append(index)
-            #return columnNum - needleLen
 
     # Execute fuzzy searching with calculation Levenshtein distance
     for k in range(2, maxErrors + 2):
@@ -61,20 +61,18 @@ def bitapSearch(haystack, needle, maxErrors):
             table[k].append(resColumn)
             if (resColumn & 0x1) == 0:
                 startPos = max(0, columnNum - needleLen - 1) # taking in account Replace operation
-                #return startPos
                 if startPos not in result:
                     result.append(startPos)
-
     return result
 
 
 
 # Example usage
-text = "abcaxyxz"
-pattern = ["ab", "xy", "a", "b", "x", "y", "xyx", "yx"]
-maxErrors = 0
+text = "мы купили помидор"
+pattern = ["миддор"]
+maxErrors = 1
 
+#print(bitapSearchMultiple(text, pattern, threshold))
 print(bitapSearchMultiple(text, pattern, maxErrors))
-print(bitapSearchMultiple("корти", ["коти"], 1))
 
 #print(bitapSearch("abcaxyxz", "a", ))
