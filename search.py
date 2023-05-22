@@ -79,7 +79,7 @@ def bitap_search(haystack: str, needle: str, threshold: int) -> List[int]:
     def _generate_alphabet(needle, haystack):
         """
         Вспомогательная функция для генерации алфавита
-        Алфавит - это словарь, где ключи - буквы строки,
+        Алфавит - это словарь, где ключи - буквы строки,`
         а значения - битовые маски, показывающие позиции буквы в подстроке
         :param needle: подстрока
         :param haystack: строка
